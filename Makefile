@@ -8,14 +8,9 @@ OBJCOPY = $(TOOLPREFIX)-objcopy
 CFLAGS  = -mcpu=arm1176jzf-s -fpic -ffreestanding
 ASFLAGS = -mcpu=arm1176jzf-s -fpic -ffreestanding
 
-SRCS=$(wildcard *.c */*.c)
-OBJS=$(SRCS:.c=.o)
-
-libgcc := $(shell $(CC) -print-file-name=libgcc.a)
-
-kernel: $(OBJS) entry.o kernel.ld
-	$(LD) -T kernel.ld --oformat elf32-littlearm -o kernel.elf $(OBJS) entry.o -L$(dir $(libgcc)) -lgcc
+kernel: entry.o kernel.ld
+	$(LD) -T kernel.ld --oformat elf32-littlearm -o kernel.elf entry.o
 	$(OBJCOPY) kernel.elf -O binary kernel.img
 
 clean: 
-	rm -f *.o *.elf *.img */*.o */*.elf */*.img 
+	rm -f *.o *.elf *.img 
