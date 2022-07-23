@@ -6,7 +6,7 @@ program = open(sys.argv[2], "rb")
 payload = program.read()
 payloadsize = len(payload).to_bytes(4,byteorder="big")
 
-ser = serial.Serial(sys.argv[1], 115200)
+ser = serial.Serial(sys.argv[1], 115200, timeout=3)
 print(ser.name)
 
 ser.reset_input_buffer()
