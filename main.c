@@ -2,7 +2,7 @@
 #include "fatfs/ff.h"
 #include "gpio.h"
 #include "systimer.h"
-
+#include "power.h"
 
 void
 main()
@@ -44,7 +44,7 @@ main()
     res = f_opendir(dp, "0:/");
     if (res != FR_OK)
     {
-        uart_puts("shit3\n");
+        uart_puts("f_opendir failed\n");
         return;
     }
 
@@ -66,12 +66,58 @@ main()
         uart_puts("\n\r");
     }
 
+    // bootloader
+    gpio_func_sel(16, 0b001);
+    gpio_output(16, 0);
+    for(int i=0; i<3; ++i)
+    {
+        char c;
+        systimer_sleep(1);
+
+        if(uart_dataready()) {
+            uint32_t size = 0;
+            for(int i=0; i<4; ++i)
+            {
+                c = uart_getc();
+                uart_send(c);
+                size = size << 8;
+                size = size + c;
+            }
+
+            char* data = (char *)0x80000;
+            char* bp = data;
+            for(int s=0; s<size; ++s) {
+                *bp = uart_getc();
+                uart_send(*bp);
+                bp += 1;
+            }
+            uart_send('#');
+
+            FIL fdst;
+            FRESULT res = f_open(&fdst, "0:/KERNEL.IMG", FA_CREATE_ALWAYS | FA_WRITE);
+            if (res != FR_OK)
+            {
+                uart_puts("f_open failed\n");
+                return;
+            }
+
+            uint32_t sizewrite = 0;
+            res = f_write(&fdst, (void *)data, size, (unsigned int*)&sizewrite);
+            f_close(&fdst);
+
+            gpio_output(16, 1);
+            reset();
+        }
+    }
+    gpio_output(16, 1);
+    uart_puts("no data from uart!\n\r");
+
     // led test
     gpio_func_sel(16, 0b001);
     while(1) {
-        gpio_output(16, 1);
-        systimer_sleep(1);
         gpio_output(16, 0);
+        systimer_sleep(1);
+        gpio_output(16, 1);
         systimer_sleep(1);
     }
 }

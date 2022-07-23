@@ -5,8 +5,8 @@ AS = $(TOOLPREFIX)-gcc
 LD = $(TOOLPREFIX)-ld
 OBJCOPY = $(TOOLPREFIX)-objcopy
 
-CFLAGS  = -mcpu=arm1176jzf-s -fpic -ffreestanding
-ASFLAGS = -mcpu=arm1176jzf-s -fpic -ffreestanding
+CFLAGS  = -mcpu=arm1176jzf-s -fpic -ffreestanding -g -O0
+ASFLAGS = -mcpu=arm1176jzf-s -fpic -ffreestanding -g
 
 SRCS=$(wildcard *.c */*.c)
 OBJS=$(SRCS:.c=.o)

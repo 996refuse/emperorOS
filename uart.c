@@ -73,14 +73,22 @@ void uart_init()
     *AUX_MU_CNTL = 3;      // enable Tx, Rx
 }
 
+int uart_transmitteridle () {
+    return *AUX_MU_LSR&0x20;
+}
+
 /**
  * Send a character
  */
 void uart_send(unsigned int c) {
     /* wait until we can send */
-    do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x20));
+    do{asm volatile("nop");}while(!uart_transmitteridle());
     /* write the character to the buffer */
     *AUX_MU_IO=c;
+}
+
+int uart_dataready() {
+    return *AUX_MU_LSR&0x01;
 }
 
 /**
@@ -89,11 +97,12 @@ void uart_send(unsigned int c) {
 char uart_getc() {
     char r;
     /* wait until something is in the buffer */
-    do{asm volatile("nop");}while(!(*AUX_MU_LSR&0x01));
+    do{asm volatile("nop");}while(!uart_dataready());
     /* read it and return */
     r=(char)(*AUX_MU_IO);
     /* convert carrige return to newline */
-    return r=='\r'?'\n':r;
+    //return r=='\r'?'\n':r;
+    return r;
 }
 
 /**
