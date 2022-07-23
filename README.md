@@ -4,5 +4,10 @@
 --------------------------------------------------------------
 
 1. led-blink
-2. uart
-3. fat32
+2. gpio
+3. uart
+4. sd
+5. fat32
+6. systimer
+7. power
+8. bootloader
