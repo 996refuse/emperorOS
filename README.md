@@ -3,6 +3,12 @@
 
 --------------------------------------------------------------
 
+## platform
+
+first-generation Raspberry Pi, all Models
+
+## features
+
 1. led-blink
 2. gpio
 3. uart
@@ -11,3 +17,4 @@
 6. systimer
 7. power
 8. bootloader
+9. memory
