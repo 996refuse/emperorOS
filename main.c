@@ -3,6 +3,7 @@
 #include "gpio.h"
 #include "systimer.h"
 #include "power.h"
+#include "memory.h"
 
 void
 main()
@@ -111,6 +112,17 @@ main()
     }
     gpio_output(16, 1);
     uart_puts("no data from uart!\n\r");
+
+    // mmu test, cp should be high address
+    unsigned int pc_value;
+    __asm (
+        "mov %[result], pc\n\t"
+        : [result]"=r" (pc_value)
+        :
+        :
+    );
+    uart_puts("pc_value is :\n\r");
+    uart_hex(pc_value);
 
     // led test
     gpio_func_sel(16, 0b001);

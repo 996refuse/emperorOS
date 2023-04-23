@@ -5,8 +5,6 @@
  
 // Make _start global.
 .globl _start
- 
-        .org 0x8000
 // Entry point for the kernel.
 // r15 -> should begin execution at 0x8000.
 // r0 -> 0x00000000
@@ -17,6 +15,21 @@ _start:
 	// Setup the stack.
 	mov sp, #0x8000
  
+	// enable mmu, virtual memory
+	bl setupkvm
+	mov r0, #0
+	mov r1, #1
+	mcr p15, 0, r1, c3, c0
+	// all memory are set as Domain 0, accesses require being checked
+	// Domain Access Control, b01 = Client. Accesses are checked against the access permission bits in the TLB entry
+	// first-level descriptor domain bits[8:5] should set to 0. (default)
+	mcr p15, 0, r0, c2, c0
+	// set TTBR0 = 0x0000
+	mcr p15, 0, r1, c1, c0, 0
+	// Control, MMU enabled
+
+	add sp, #0xC0000000
+
 	// Clear out bss.
 	ldr r4, =__bss_start
 	ldr r9, =__bss_end
@@ -25,12 +38,8 @@ _start:
 	mov r7, #0
 	mov r8, #0
 	b       2f
- 
 1:
-	// store multiple at r4.
 	stmia r4!, {r5-r8}
- 
-	// If we are still below bss_end, loop.
 2:
 	cmp r4, r9
 	blo 1b
