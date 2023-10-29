@@ -76,7 +76,8 @@ uint32_t createuvm(char *init, uint32_t sz)
 
 void loaduvm(uint32_t pgd)
 {
-    // invalid tlb first is tlb enabled
-    // mem(1M) => 0x0000_0000-0x0010_0000
     ((uint32_t*)P2V(PDE))[0] = pgd;
+
+    // invalid tlb
+    asm("MCR p15, 0, %[r], c8, c7, 0" : :[r]"r" (0):);
 }

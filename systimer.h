@@ -13,14 +13,14 @@
 // return the counter value
 uint64_t systimer_counter();
 
-// enable a match 0-3
-void systimer_set(int match_channel);
+// Write a one to clear the corresponding match interrupt
+void systimer_clear(int match_channel);
 
-// detect if the match is triggered, zero means isn't triggered.
-int systimer_get(int match_channel);
+// the matched channel is triggered, negative means isn't triggered.
+int systimer_get();
 
 // set compare value for a match
-void systimer_cmp(int match_channel, int value);
+void systimer_set(int match_channel, int value);
 
 void systimer_sleep(int second);
 

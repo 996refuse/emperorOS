@@ -17,14 +17,19 @@ _start:
  
 	// enable mmu, virtual memory
 	bl setupkvm
-	mov r0, #0
+
 	mov r1, #1
 	mcr p15, 0, r1, c3, c0
 	// all memory are set as Domain 0, accesses require being checked
 	// Domain Access Control, b01 = Client. Accesses are checked against the access permission bits in the TLB entry
 	// first-level descriptor domain bits[8:5] should set to 0. (default)
+
+	mov r0, #0
 	mcr p15, 0, r0, c2, c0
 	// set TTBR0 = 0x0000
+
+	mrc p15, 0, r1, c1, c0, 0
+	orr r1, #0x01
 	mcr p15, 0, r1, c1, c0, 0
 	// Control, MMU enabled
 

@@ -5,20 +5,23 @@ uint64_t systimer_counter()
     return *(volatile uint64_t*)SYSTIMER_CNT;
 }
 
-// enable a match 0-3
-void systimer_set(int match_channel)
+// Write a one to clear the corresponding match interrupt
+void systimer_clear(int match_channel)
 {
     *(volatile uint32_t*)SYSTIMER_CS = 1 << match_channel;
 }
 
 // detect if the match is triggered, zero means isn't triggered.
-int systimer_get(int match_channel)
+int systimer_get()
 {
-    return (*(volatile uint32_t*)SYSTIMER_CS) & (1 << match_channel);
+    uint32_t match = (*(volatile uint32_t*)SYSTIMER_CS) & 0b1111;
+    int res = -1;
+    while(match >>= 1) res += 1;
+    return res;
 }
 
 // set compare value for a match
-void systimer_cmp(int match_channel, int value)
+void systimer_set(int match_channel, int value)
 {
     *((volatile uint32_t*)SYSTIMER_CMP + match_channel) = value;
 }

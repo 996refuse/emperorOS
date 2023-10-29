@@ -4,41 +4,32 @@
 #include "systimer.h"
 #include "power.h"
 #include "memory.h"
+#include "interrupt.h"
 
 void
 main()
 {
-    // uart test
     uart_init();
+    printf("================================\n");
+    printf("uart test\n");
     uart_puts("hello world\n");
     uart_hex(0xdeadbeef);
 
-    // enable jtag
+    printf("================================\n");
+    printf("enable jtag\n");
     gpio_enable_jtag();
 
-    // fs test
+    printf("================================\n");
+    printf("fs test\n");
     FATFS fs;
     FATFS* pfs = &fs;
     FRESULT res;
-
     res = f_mount(pfs, "0", 0);
     if (res != FR_OK)
     {
         uart_puts("f_mount failed\n");
         return;
     }
-
-    uint32_t nclst = 0;
-    res = f_getfree("0", &nclst, &pfs);
-    if (res != FR_OK)
-    {
-        uart_puts("f_getfree failed\n");
-        return;
-    }
-
-    uart_puts("Number of Free clusters on the volume:\n");
-    uart_hex(nclst);
-
     uart_puts("List All FILEs in root directory:\n");
     DIR d;
     DIR* dp = &d;
@@ -48,7 +39,6 @@ main()
         uart_puts("f_opendir failed\n");
         return;
     }
-
     FILINFO fi;
     FILINFO* fno = &fi;
     while (1)
@@ -67,16 +57,17 @@ main()
         uart_puts("\n\r");
     }
 
-    // bootloader
+    printf("================================\n");
+    printf("bootloader\n");
     gpio_func_sel(16, 0b001);
     gpio_output(16, 0);
     for(int i=0; i<3; ++i)
     {
-        char c;
         systimer_sleep(1);
 
         if(uart_dataready()) {
             uint32_t size = 0;
+            char c;
             for(int i=0; i<4; ++i)
             {
                 c = uart_getc();
@@ -113,23 +104,26 @@ main()
     gpio_output(16, 1);
     uart_puts("no data from uart!\n\r");
 
-    // mmu test, cp should be high address
-    unsigned int pc_value;
+    printf("================================\n");
+    printf("memory init\n");
+    kinit();
+    unsigned int pc;
     __asm (
         "mov %[result], pc\n\t"
-        : [result]"=r" (pc_value)
-        :
-        :
+        : [result]"=r" (pc)
     );
-    uart_puts("pc_value is :\n\r");
-    uart_hex(pc_value);
+    uart_puts("pc should be on high address:\n\r");
+    uart_hex(pc);
 
-    // led test
-    gpio_func_sel(16, 0b001);
-    while(1) {
-        gpio_output(16, 0);
-        systimer_sleep(1);
-        gpio_output(16, 1);
-        systimer_sleep(1);
-    }
+    printf("================================\n");
+    printf("interrupt init\n");
+    set_vector_base_addr(&arm_intr_vector);
+    enable_irq(1, TIMER1);
+    uint32_t _c = systimer_counter();
+    systimer_set(TIMER1, _c + ticks_interval);
+
+    printf("================================\n");
+    printf("process scheduler init\n");
+    proc_init();
+    proc_schd();
 }

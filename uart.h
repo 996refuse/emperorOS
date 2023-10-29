@@ -33,5 +33,6 @@ void uart_puts(char *s);
 void uart_hex(unsigned int d);
 int uart_transmitteridle();
 int uart_dataready();
+void printf(char *fmt, ...);
 
 #endif

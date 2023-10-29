@@ -18,3 +18,4 @@ first-generation Raspberry Pi, all Models
 7. power
 8. bootloader
 9. memory
+10. interrupt
