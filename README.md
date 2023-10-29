@@ -7,6 +7,19 @@
 
 first-generation Raspberry Pi, all Models
 
+## build
+
+```
+git clone https://github.com/996refuse/emperorOS.git
+cd emperorOS
+
+export PATH=path/to/gcc-arm-none-eabi/:$PATH
+make clean
+make
+
+cp kernel.img path/to/sdcard
+```
+
 ## features
 
 1. led-blink
