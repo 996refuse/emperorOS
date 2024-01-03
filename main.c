@@ -108,7 +108,7 @@ main()
     printf("memory init\n");
     kinit();
     unsigned int pc;
-    __asm (
+    asm (
         "mov %[result], pc\n\t"
         : [result]"=r" (pc)
     );

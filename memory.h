@@ -40,5 +40,6 @@ char*    kalloc(void);
 void     setupkvm(void);
 uint32_t createuvm(char *init, uint32_t sz);
 void     loaduvm(uint32_t pgd);
+uint32_t copyuvm(uint32_t pgd);
 
 #endif

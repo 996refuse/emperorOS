@@ -4,10 +4,11 @@
 #include "uart.h"
 #include "memory.h"
 #include "string.h"
+#include "syscall.h"
 
-struct proc procs[NPROC] = {0};
-struct context context_schd = {0};
-
+static struct proc procs[NPROC] = {0};
+static struct proc *curproc = 0;
+static struct context context_schd = {0};
 
 uint32_t ticks = 0;
 uint32_t ticks_interval = 0x00100000;
@@ -15,7 +16,7 @@ ARM_INTR_REG* arm_intr_reg = (ARM_INTR_REG *)ARM_INTR_REG_BASE;
 
 void
 set_vector_base_addr(uint32_t* addr) {
-    __asm (
+    asm (
         "mcr p15, 0, %[v], c12, c0, 0\n\t"
         :
         : [v]"r" (addr)
@@ -43,6 +44,8 @@ enable_irq(int bank, int bit) {
 void
 trap_enter(struct context *tf, uint32_t cpsr)
 {
+    curproc->context = *tf;
+    int callnum, callres;
 	switch(cpsr & 0b11111){
         case IRQ_MODE:
             if ((arm_intr_reg->cpu_pending & 0x100) && (arm_intr_reg->gpu_pending[0] & (1 << TIMER1)))
@@ -57,11 +60,17 @@ trap_enter(struct context *tf, uint32_t cpsr)
             }
             break;
         case SVC_MODE:
+            callnum = getsyscallnum(curproc->context.r[15]);
+            callres = syscalls[callnum]();
+            curproc->context.r[0] = callres;
+            break;
         default:
             while (1);
 	}
     schd(&context_schd);
 }
+
+int nextpid = 0;
 
 void
 proc_init(void) {
@@ -71,10 +80,23 @@ proc_init(void) {
             break;
     strncpy(p->name, "init", 4);
     p->parent = 0;
-    p->pid = 0;
+    p->pid = nextpid++;
 
-    unsigned char inifiniteloop[] = {0xfe, 0xff, 0xff, 0xea};
-    p->pgd = createuvm(inifiniteloop, 4);
+
+    // printab.S 28
+    unsigned char inifiniteloop[] = {
+        0x01, 0x00, 0x00, 0xef,
+        0x00, 0x00, 0x50, 0xe3,
+        0x01, 0x00, 0x00, 0x0a,
+        0x02, 0x00, 0x00, 0xef,
+        0xfd, 0xff, 0xff, 0xea,
+        0x03, 0x00, 0x00, 0xef,
+        0xfd, 0xff, 0xff, 0xea,
+    };
+
+    // inifiniteloop.S 4
+    //unsigned char inifiniteloop[] = {0xfe, 0xff, 0xff, 0xea};
+    p->pgd = createuvm(inifiniteloop, 28);
     p->state = RUNNABLE;
     p->context.cpsr  = 0x00000050;
     p->context.r[13] = 0x00100000;
@@ -91,8 +113,35 @@ proc_schd(void) {
         {
             if(p->state != RUNNABLE)
 				continue;
+            curproc = p;
             loaduvm(p->pgd);
             trap_return(&(p->context), &context_schd);
         }
     }
+}
+
+int
+proc_fork(void)
+{
+    struct proc *p;
+    // Allocate process.
+    for(p = procs; p < &procs[NPROC]; p++) {
+        if(p->state == UNUSED) {
+            break;
+        }
+    }
+
+    p->state = RUNNABLE;
+    p->pid = nextpid++;
+    p->parent = curproc;
+    p->context = curproc->context;
+    strncpy(p->name, curproc->name, 16);
+
+    // Copy process state from p.
+    p->pgd = copyuvm(curproc->pgd);
+
+    // Clear r0 so that fork returns 0 in the child.
+    p->context.r[0] = 0;
+
+    return p->pid;
 }

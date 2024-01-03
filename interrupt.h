@@ -130,5 +130,6 @@ extern uint32_t ticks_interval;
 #define AVSPMON 31
 
 void enable_irq(int bank, int bit);
+int proc_fork(void);
 
 #endif

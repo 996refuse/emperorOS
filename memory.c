@@ -81,3 +81,11 @@ void loaduvm(uint32_t pgd)
     // invalid tlb
     asm("MCR p15, 0, %[r], c8, c7, 0" : :[r]"r" (0):);
 }
+
+uint32_t copyuvm(uint32_t pgd)
+{
+    char* va = P2V(pgd & 0xfff00000);
+    char* mem = kalloc();
+    memmove(mem, va, PGSIZE/4);
+    return V2P(mem)|PDX_AP(AP_U_RW)|PDX_TYPE(TYPE_SECTION);
+}
