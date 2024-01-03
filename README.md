@@ -32,3 +32,4 @@ cp kernel.img path/to/sdcard
 8. bootloader
 9. memory
 10. interrupt
+11. syscall
