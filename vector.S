@@ -17,7 +17,7 @@ trap_irq_enter:
 	sub lr, lr, #4
 
 trap_swi_enter:             /* only deal with user mode interrupt?? */
-	ldr sp, =0xC0006000     /* set kernel stack */
+	ldr sp, =0xC0006000     /* set kernel temporary stack, for each interupt session */
 	stmfd sp!, {lr}         /* save pc */
 	stmfd sp!, {r0-r14}^    /* save r0-r14 user mode processor context */
 	mrs lr, spsr
