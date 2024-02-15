@@ -25,7 +25,7 @@ void kfree(void *v)
 void kinit(void)
 {
 	kmem = 0;
-	for(char* p = (PA_START+PGSIZE); p + PGSIZE <= PA_END; p += PGSIZE) {
+	for(char* p = (char *)(PA_START+PGSIZE); p + PGSIZE <= (char *)PA_END; p += PGSIZE) {
         kfree(P2V(p));
     }
 }
@@ -60,13 +60,13 @@ void setupkvm(void)
 		((uint32_t*)PDE)[PDX(va)] = pa|PDX_AP(AP_U_NA)|PDX_TYPE(TYPE_SECTION);
 }
 
-uint32_t createuvm(char *init, uint32_t sz)
+uint32_t createuvm(char *init, uint32_t sz, char* mem)
 {
 	if(sz > PGSIZE) {
         uart_puts("@@@ panic @@@ inituvm, out of a page\r\n");
         while(1);
     }
-	char* mem = kalloc();
+
 	//memset(mem, 0, PGSIZE);
 	memmove(mem, init, sz);
 
@@ -79,13 +79,22 @@ void loaduvm(uint32_t pgd)
     ((uint32_t*)P2V(PDE))[0] = pgd;
 
     // invalid tlb
-    asm("MCR p15, 0, %[r], c8, c7, 0" : :[r]"r" (0):);
+    asm ("MCR p15, 0, %[r], c8, c7, 0": :[r]"r" (0):);
+
+    // invalid entire instruction cache
+    // asm ("MCR p15, 0, %[r], c7, c5, 0": :[r]"r" (0):);
+    // invalid entire data cache
+    // asm ("MCR p15, 0, %[r], c7, c6, 0": :[r]"r" (0):);
 }
 
-uint32_t copyuvm(uint32_t pgd)
+uint32_t copyuvm(uint32_t pgd, char* mem)
 {
     char* va = P2V(pgd & 0xfff00000);
-    char* mem = kalloc();
-    memmove(mem, va, PGSIZE/4);
+    memmove(mem, va, PGSIZE);
     return V2P(mem)|PDX_AP(AP_U_RW)|PDX_TYPE(TYPE_SECTION);
+}
+
+void freeuvm(uint32_t pgd)
+{
+    kfree(P2V(pgd & 0xfff00000));
 }

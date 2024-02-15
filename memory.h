@@ -38,8 +38,8 @@ void     kfree(void *);
 void     kinit(void);
 char*    kalloc(void);
 void     setupkvm(void);
-uint32_t createuvm(char *init, uint32_t sz);
+uint32_t createuvm(char *init, uint32_t sz, char* mem);
 void     loaduvm(uint32_t pgd);
-uint32_t copyuvm(uint32_t pgd);
-
+uint32_t copyuvm(uint32_t pgd, char* mem);
+void     freeuvm(uint32_t pgd);
 #endif

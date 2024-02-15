@@ -1,19 +1,21 @@
 #include "syscall.h"
 #include "uart.h"
 #include "interrupt.h"
+#include "exec.h"
 
-int printa(void) {
+void printa(void) {
     printf("a\n");
 }
 
-int printb(void) {
+void printb(void) {
     printf("b\n");
 }
 
-int (*syscalls[32])(void) = {
+void (*syscalls[32])(void) = {
     [SYS_printa]    printa,
     [SYS_printb]    printb,
     [SYS_fork]      proc_fork,
+    [SYS_exec]      exec,
 };
 
 int getsyscallnum(uint32_t *pc) {

@@ -6,8 +6,9 @@
 #define SYS_fork    1
 #define SYS_printa  2
 #define SYS_printb  3
+#define SYS_exec    4
 
-extern int (*syscalls[32])(void);
+extern void (*syscalls[32])(void);
 int getsyscallnum(uint32_t *);
 
 #endif

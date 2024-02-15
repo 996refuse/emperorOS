@@ -8,7 +8,7 @@
 
 struct context {
 	uint32_t cpsr;
-	uint32_t r[16];
+	uint32_t r[16]; // fp=r11 ip=r12 sp=r13 lr=r14 pc=r15
 };
 
 extern uint32_t arm_intr_vector;
@@ -130,6 +130,9 @@ extern uint32_t ticks_interval;
 #define AVSPMON 31
 
 void enable_irq(int bank, int bit);
-int proc_fork(void);
+void proc_fork(void);
 
+extern struct proc procs[];
+extern struct proc *curproc;
+extern struct context context_schd;
 #endif
