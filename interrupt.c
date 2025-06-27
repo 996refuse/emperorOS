@@ -7,7 +7,7 @@
 #include "syscall.h"
 
 struct proc procs[NPROC] = {0};
-struct proc *curproc = 0;
+struct proc *curproc, *initproc = 0;
 struct context context_schd = {0};
 
 uint32_t ticks = 0;
@@ -78,6 +78,7 @@ proc_init(void) {
         if (p->state == UNUSED)
             break;
     strncpy(p->name, "initcode", 8);
+    initproc = p;
     p->parent = 0;
     p->pid = nextpid++;
 
@@ -155,4 +156,50 @@ proc_fork(void)
 
     // in the parent, fork returns child pid
     curproc->context.r[0] = p->pid;
+}
+
+void
+proc_wakeup(struct proc *p, int pid)
+{
+    if (p->state == SLEEPING) {
+        p->state = RUNNABLE;
+        p->context.r[0] = pid;
+    } else {
+        while (1);
+    }
+    return;
+}
+
+void
+proc_exit(void)
+{
+    if (curproc->pid == 0) while (1);
+
+    // reparenting
+    struct proc *p;
+    for (p = procs; p < &procs[NPROC]; p++)
+        if (p->parent == curproc) p->parent = initproc;
+
+    // close open files
+
+    curproc->state = UNUSED;
+    freeuvm(curproc->pgd);
+    proc_wakeup(curproc->parent, curproc->pid);
+    return;
+}
+
+void
+proc_wait(void)
+{
+    struct proc *p;
+    for (p = procs; p < &procs[NPROC]; p++){
+        if(p->parent == curproc) {
+            curproc->state = SLEEPING;
+            return;
+        }
+    }
+
+    // no kids
+    curproc->context.r[0] = -1;
+    return;
 }

@@ -16,7 +16,7 @@ extern uint32_t arm_intr_vector;
 void trap_enter(struct context *tf, uint32_t cpsr);
 void set_vector_base_addr(uint32_t *);
 
-enum procstate { UNUSED, RUNNABLE };
+enum procstate { UNUSED, RUNNABLE, SLEEPING };
 
 struct proc {
 	enum procstate state;       // Process state
@@ -131,6 +131,9 @@ extern uint32_t ticks_interval;
 
 void enable_irq(int bank, int bit);
 void proc_fork(void);
+// void proc_exit(void) __attribute__((noreturn));
+void proc_exit(void);
+void proc_wait(void);
 
 extern struct proc procs[];
 extern struct proc *curproc;
