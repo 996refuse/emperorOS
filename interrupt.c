@@ -143,6 +143,11 @@ proc_fork(void)
         }
     }
 
+    if (p == &procs[NPROC]) {
+        curproc->context.r[0] = -1;
+        return;
+    }
+
     p->state = RUNNABLE;
     p->pid = nextpid++;
     p->parent = curproc;
