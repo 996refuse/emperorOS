@@ -12,8 +12,14 @@ int fork() {
     return res;
 }
 
-void exit() {
-    asm ("swi #5\n\t");
+void exit(int status) {
+    asm volatile (
+        "mov r0, %[status]\n\t"
+        "swi #5\n\t"
+        :
+        : [status] "r" (status)
+        : "r0"
+    );
 }
 
 int wait() {

@@ -1,4 +1,4 @@
 int fork();
-void exit();
+void exit(int status);
 int wait();
 void _putchar(char);

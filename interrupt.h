@@ -16,7 +16,7 @@ extern uint32_t arm_intr_vector;
 void trap_enter(struct context *tf, uint32_t cpsr);
 void set_vector_base_addr(uint32_t *);
 
-enum procstate { UNUSED, RUNNABLE, SLEEPING };
+enum procstate { UNUSED, RUNNABLE, SLEEPING, ZOMBIE };
 
 struct proc {
 	enum procstate state;       // Process state
@@ -25,6 +25,7 @@ struct proc {
 	struct context context;
 	char name[16];              // Process name (debugging)
 	uint32_t pgd;		        // page descriptor
+	int xstatus;
 };
 
 #define NPROC 64                // maximum support 64 processes

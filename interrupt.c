@@ -148,6 +148,7 @@ proc_fork(void)
     p->parent = curproc;
     p->context = curproc->context;
     strncpy(p->name, curproc->name, 16);
+    p->xstatus = 0;
 
     p->pgd = copyuvm(curproc->pgd, kalloc());
 
@@ -165,6 +166,7 @@ proc_wakeup(struct proc *p, int pid)
         p->state = RUNNABLE;
         p->context.r[0] = pid;
     } else {
+        // should never happen
         while (1);
     }
     return;
@@ -175,16 +177,17 @@ proc_exit(void)
 {
     if (curproc->pid == 0) while (1);
 
+    curproc->xstatus = curproc->context.r[0];
+
     // reparenting
     struct proc *p;
     for (p = procs; p < &procs[NPROC]; p++)
         if (p->parent == curproc) p->parent = initproc;
 
     // close open files
-
-    curproc->state = UNUSED;
-    freeuvm(curproc->pgd);
-    proc_wakeup(curproc->parent, curproc->pid);
+    curproc->state = ZOMBIE;
+    if (curproc->parent && curproc->parent->state == SLEEPING)
+        proc_wakeup(curproc->parent, curproc->pid);
     return;
 }
 
@@ -192,11 +195,29 @@ void
 proc_wait(void)
 {
     struct proc *p;
+    int havekids = 0;
+
     for (p = procs; p < &procs[NPROC]; p++){
-        if(p->parent == curproc) {
-            curproc->state = SLEEPING;
+        if(p->parent != curproc)
+            continue;
+
+        havekids = 1;
+        if (p->state == ZOMBIE) {
+            int pid = p->pid;
+            freeuvm(p->pgd);
+            p->state = UNUSED;
+            p->pid = 0;
+            p->parent = 0;
+            p->pgd = 0;
+            p->xstatus = 0;
+            curproc->context.r[0] = pid;
             return;
         }
+    }
+
+    if (havekids) {
+        curproc->state = SLEEPING;
+        return;
     }
 
     // no kids

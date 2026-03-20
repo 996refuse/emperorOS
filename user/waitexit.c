@@ -9,7 +9,7 @@ int _start() {
     }
     else {
         printf("child start\r\n");
-        exit();
+        exit(0);
     }
     return 0;
 }
