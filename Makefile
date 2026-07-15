@@ -20,7 +20,9 @@ kernel: $(OBJS) $(ASMOBJS) kernel.ld
 	$(OBJCOPY) kernel.elf -O binary kernel.img
 
 clean: 
-	rm -f *.o *.elf *.img */*.o */*.elf */*.img */*.bin */*.hex
+	find . -path "./firmware" -prune -o \
+		\( -name "*.o" -o -name "*.elf" -o -name "*.img" -o -name "*.bin" -o -name "*.hex" \) \
+		-type f -exec rm -f {} +
 
 USERSRCS=$(wildcard user/*.S)
 USERTARGETS=$(USERSRCS:.S=.hex)
