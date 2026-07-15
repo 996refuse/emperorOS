@@ -24,26 +24,25 @@ void gpio_func_sel(int gpio_pin, int gpio_func)
 void gpio_output(int gpio_pin, int value)
 {
     uint32_t addr = value ? GPIO_GPSET : GPIO_GPCLR;        
-    *(volatile uint64_t*)addr = 1 << gpio_pin;
+    *(volatile uint32_t*)addr = 1 << gpio_pin;
 }
 
 void gpio_enable_jtag()
 {
     gpio_func_sel(22, 0b011);
-	gpio_func_sel(23, 0b011);
-	gpio_func_sel(24, 0b011);
-	gpio_func_sel(25, 0b011);
-    gpio_func_sel(4,  0b010); // alt5
-	gpio_func_sel(27, 0b011);
+    //gpio_func_sel(23, 0b011);
+    gpio_func_sel(24, 0b011);
+    gpio_func_sel(25, 0b011);
+    gpio_func_sel(26, 0b011);
+    gpio_func_sel(27, 0b011);
 
     *(volatile uint32_t*)GPIO_GPPUD = 0;
     for (volatile uint32_t i = 0; i < 150; ++i);
-    *(volatile uint64_t*)GPIO_GPPUDCLK = 
+    *(volatile uint32_t*)GPIO_GPPUDCLK = 
         (1<<22) |
-        (1<<23) |
         (1<<24) |
         (1<<25) |
-        (1<<4 ) |
+        (1<<26) |
         (1<<27) ;
     for (volatile uint32_t i = 0; i < 150; ++i);
     *(volatile uint64_t*)GPIO_GPPUDCLK = 0;
