@@ -5,10 +5,6 @@
 #include "string.h"
 #include "memory.h"
 
-void exec() {
-    execve();
-}
-
 void execve() {
     char * path = (char * )curproc->context.r[0];
     char **argv = (char **)curproc->context.r[1];

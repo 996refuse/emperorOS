@@ -4,7 +4,8 @@
 int _start() {
     int res = fork();
     if (res) {
-        int pid = wait();
+        int ws;
+        int pid = wait(0, &ws);
         printf("child end res %d, pid %d\r\n", res, pid);
     }
     else {

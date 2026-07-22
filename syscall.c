@@ -8,14 +8,18 @@ void putchar(void) {
     uart_send(c);
 }
 
-void (*syscalls[32])(void) = {
+void (*syscalls[NSYSCALLS])(void) = {
+    [SYS_exit]      proc_exit,      // void _exit(int status);
+    [SYS_fork]      proc_fork,      // pid_t fork(void);
+    [SYS_read]      0,
+    [SYS_write]     0,
+    [SYS_open]      0,
+    [SYS_close]     0,
+    [SYS_execve]    execve,         // int execve(const char *pathname, char *const argv[], char *const envp[]);
+    [SYS_wait4]     proc_wait4,     // pid_t wait4(pid_t pid, int *wstatus, int options, struct rusage *rusage);
     [SYS_putchar]   putchar,
-    [SYS_fork]      proc_fork,
-    [SYS_exec]      exec,
-    [SYS_exit]      proc_exit,
-    [SYS_wait]      proc_wait,
 };
 
-int getsyscallnum(uint32_t *pc) {
-    return *(pc-1) & 0x00ffffff;
-}
+// int getsyscallnum(uint32_t *pc) {
+//     return *(pc-1) & 0x00ffffff;
+// }

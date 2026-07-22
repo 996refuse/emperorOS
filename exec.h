@@ -41,7 +41,6 @@ struct proghdr {
 // Values for Proghdr type
 #define ELF_PROG_LOAD           1
 
-extern void exec(void);
-void execve(void);
+extern void execve(void);
 
 #endif

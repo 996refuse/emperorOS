@@ -1,40 +1,55 @@
 #include "syslib.h"
+#include "../syscall.h"
 
 int fork() {
-    int res = 0;
+    register int r7 asm("r7") = SYS_fork;
+    register int r0 asm("r0");
+
     asm volatile (
-        "swi #1\n\t"
-        "mov %[reg], r0"
-        : [reg] "=r" (res)
-        :
-        : "r0"
+        "svc #0"
+        : "=r" (r0)
+        : "r" (r7)
+        : "memory"
     );
-    return res;
+    return r0;
 }
 
 void exit(int status) {
+    register int r7 asm("r7") = SYS_exit;
+    register int r0 asm("r0") = status;
+
     asm volatile (
-        "mov r0, %[status]\n\t"
-        "swi #5\n\t"
+        "svc #0"
         :
-        : [status] "r" (status)
-        : "r0"
+        : "r" (r7), "r" (r0)
+        : "memory"
     );
+    while(1);
 }
 
-int wait() {
+int wait(int pid, int *ws){
+    register int r7 asm("r7") = SYS_wait4;
+    register int r0 asm("r0") = pid;
+    register int r1 asm("r1") = (uintptr_t)ws;
+
     int res = 0;
     asm volatile (
-        "swi #6\n\t"
-        "mov %[reg], r0"
-        : [reg] "=r" (res)
-        :
-        : "r0"
-        // :
-        // :
-        // : "r0"
+        "svc #0"
+        : "+r" (r0)
+        : "r" (r7), "r" (r0), "r" (r1)
+        : "memory"
     );
-    return res;
+    return r0;
 }
 
-void _putchar(char character) {asm ("swi #2\n\t");}
+void _putchar(char character) {
+    register int r7 asm("r7") = SYS_putchar;
+    register int r0 asm("r0") = character;
+
+    asm volatile (
+        "svc #0"
+        :
+        : "r" (r7), "r" (r0)
+        : "memory"
+    );
+}

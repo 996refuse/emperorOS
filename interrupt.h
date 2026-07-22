@@ -134,7 +134,7 @@ void enable_irq(int bank, int bit);
 void proc_fork(void);
 // void proc_exit(void) __attribute__((noreturn));
 void proc_exit(void);
-void proc_wait(void);
+void proc_wait4(void);
 
 extern struct proc procs[];
 extern struct proc *curproc;
