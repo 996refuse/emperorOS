@@ -119,7 +119,7 @@ main()
     systimer_set(TIMER1, _c + ticks_interval);
 
     printf("================================\n");
-    printf("process scheduler init\n");
+    printf("process scheduler init: scheduler -> userspace -> trap -> scheduler\n");
     proc_init();
     proc_schd();
 }
