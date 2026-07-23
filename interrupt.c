@@ -164,24 +164,14 @@ proc_fork(void)
 }
 
 void
-proc_wakeup(struct proc *p, int pid)
-{
-    if (p->state == SLEEPING) {
-        p->state = RUNNABLE;
-        p->context.r[0] = pid;
-    } else {
-        // should never happen
-        while (1);
-    }
-    return;
-}
-
-void
 proc_exit(void)
 {
     if (curproc->pid == 0) while (1);
 
     curproc->xstatus = curproc->context.r[0];
+    struct proc *parent = curproc->parent;
+    int pid = curproc->pid;
+    int status = curproc->xstatus;
 
     // reparenting
     struct proc *p;
@@ -189,9 +179,26 @@ proc_exit(void)
         if (p->parent == curproc) p->parent = initproc;
 
     // close open files
+
+    // wake up parent
     curproc->state = ZOMBIE;
-    if (curproc->parent && curproc->parent->state == SLEEPING)
-        proc_wakeup(curproc->parent, curproc->pid);
+    if (parent && parent->state == SLEEPING && parent->context.r[7] == SYS_wait4) {
+        int *wstatus = (int*)parent->context.r[1];
+        if (wstatus) {
+            uint32_t pa = (parent->pgd & 0xfff00000) + ((uint32_t)wstatus & 0x000fffff);
+            *(int*)P2V(pa) = status;
+        }
+
+        freeuvm(curproc->pgd);
+        curproc->state = UNUSED;
+        curproc->pid = 0;
+        curproc->parent = 0;
+        curproc->pgd = 0;
+        curproc->xstatus = 0;
+
+        parent->context.r[0] = pid;
+        parent->state = RUNNABLE;
+    }
     return;
 }
 
@@ -202,22 +209,28 @@ proc_wait4(void)
     int havekids = 0;
     int *wstatus = 0;
 
+    if(curproc->context.r[0] > 0) while(1); // wait specific pid does not support yet
+
     for (p = procs; p < &procs[NPROC]; p++){
         if(p->parent != curproc)
             continue;
 
         havekids = 1;
+        // reaping
         if (p->state == ZOMBIE) {
             int pid = p->pid;
+            int status = p->xstatus;
             freeuvm(p->pgd);
             p->state = UNUSED;
             p->pid = 0;
             p->parent = 0;
             p->pgd = 0;
             p->xstatus = 0;
+
             wstatus = (int*)curproc->context.r[1];
-            if(curproc->context.r[0] > 0) while(1); // wait specific pid
-            *wstatus = p->xstatus;
+            if (wstatus)
+                *wstatus = status;
+
             curproc->context.r[0] = pid;
             return;
         }
