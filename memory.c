@@ -78,12 +78,20 @@ void loaduvm(uint32_t pgd)
 {
     ((uint32_t*)P2V(PDE))[0] = pgd;
 
-    // invalid tlb
-    asm ("MCR p15, 0, %[r], c8, c7, 0": :[r]"r" (0):);
+    // Drain write buffer: ensure page table write is visible before TLB invalidation.
+    asm volatile ("mcr p15, 0, %[r], c7, c10, 4" :: [r]"r"(0) : "memory");
 
-    // invalid entire instruction cache
+    // Invalidate entire unified TLB.
+    asm volatile ("mcr p15, 0, %[r], c8, c7, 0" :: [r]"r"(0) : "memory");
+
+    // Flush prefetch buffer, roughly the ARMv6-era equivalent of ISB.
+    asm volatile ("mcr p15, 0, %[r], c7, c5, 4" :: [r]"r"(0) : "memory");
+
+    // // invalid tlb
+    // asm ("MCR p15, 0, %[r], c8, c7, 0": :[r]"r" (0):);
+    // // invalid entire instruction cache
     // asm ("MCR p15, 0, %[r], c7, c5, 0": :[r]"r" (0):);
-    // invalid entire data cache
+    // // invalid entire data cache
     // asm ("MCR p15, 0, %[r], c7, c6, 0": :[r]"r" (0):);
 }
 

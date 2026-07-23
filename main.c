@@ -16,10 +16,6 @@ main()
     uart_hex(0xdeadbeef);
 
     printf("================================\n");
-    printf("enable jtag\n");
-    gpio_enable_jtag();
-
-    printf("================================\n");
     printf("fs test\n");
     FATFS fs;
     FATFS* pfs = &fs;
