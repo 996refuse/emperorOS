@@ -152,7 +152,6 @@ proc_fork(void)
     p->parent = curproc;
     p->context = curproc->context;
     strncpy(p->name, curproc->name, 16);
-    p->xstatus = 0;
 
     p->pgd = copyuvm(curproc->pgd, kalloc());
 
@@ -167,18 +166,16 @@ void
 proc_exit(void)
 {
     if (curproc->pid == 0) while (1);
-
-    curproc->xstatus = curproc->context.r[0];
     struct proc *parent = curproc->parent;
-    int pid = curproc->pid;
-    int status = curproc->xstatus;
+
+    // release resources
+    freeuvm(curproc->pgd);
+    curproc->pgd = 0;
 
     // reparenting
     struct proc *p;
     for (p = procs; p < &procs[NPROC]; p++)
         if (p->parent == curproc) p->parent = initproc;
-
-    // close open files
 
     // wake up parent
     curproc->state = ZOMBIE;
@@ -186,18 +183,12 @@ proc_exit(void)
         int *wstatus = (int*)parent->context.r[1];
         if (wstatus) {
             uint32_t pa = (parent->pgd & 0xfff00000) + ((uint32_t)wstatus & 0x000fffff);
-            *(int*)P2V(pa) = status;
+            *(int*)P2V(pa) = curproc->context.r[0]; // xstatus
         }
 
-        freeuvm(curproc->pgd);
-        curproc->state = UNUSED;
-        curproc->pid = 0;
-        curproc->parent = 0;
-        curproc->pgd = 0;
-        curproc->xstatus = 0;
-
-        parent->context.r[0] = pid;
+        parent->context.r[0] = curproc->pid; // pid
         parent->state = RUNNABLE;
+        curproc->state = UNUSED;
     }
     return;
 }
@@ -218,20 +209,12 @@ proc_wait4(void)
         havekids = 1;
         // reaping
         if (p->state == ZOMBIE) {
-            int pid = p->pid;
-            int status = p->xstatus;
-            freeuvm(p->pgd);
-            p->state = UNUSED;
-            p->pid = 0;
-            p->parent = 0;
-            p->pgd = 0;
-            p->xstatus = 0;
-
             wstatus = (int*)curproc->context.r[1];
             if (wstatus)
-                *wstatus = status;
+                *wstatus = p->context.r[0];
 
-            curproc->context.r[0] = pid;
+            curproc->context.r[0] = p->pid;
+            p->state = UNUSED;
             return;
         }
     }

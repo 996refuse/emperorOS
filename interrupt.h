@@ -25,7 +25,6 @@ struct proc {
 	struct context context;
 	char name[16];              // Process name (debugging)
 	uint32_t pgd;		        // page descriptor
-	int xstatus;
 };
 
 #define NPROC 64                // maximum support 64 processes
