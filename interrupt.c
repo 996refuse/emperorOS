@@ -11,7 +11,7 @@ struct proc *curproc, *initproc = 0;
 struct context context_schd = {0};
 
 uint32_t ticks = 0;
-uint32_t ticks_interval = 0x00100000;
+uint32_t ticks_interval = 0x001000;
 ARM_INTR_REG* arm_intr_reg = (ARM_INTR_REG *)ARM_INTR_REG_BASE;
 
 void
@@ -41,6 +41,56 @@ enable_irq(int bank, int bit) {
     }
 }
 
+// syscall
+void
+nanosleep(void)
+{
+    struct timespec32 *req = (struct timespec32 *)curproc->context.r[0];
+    struct timespec32 *rem = (struct timespec32 *)curproc->context.r[1];
+
+    if (!req) {
+        curproc->context.r[0] = -22; // EINVAL
+        return;
+    }
+
+    if (rem)
+    {
+        rem->tv_nsec = 0;
+        rem->tv_sec  = 0;
+    }
+
+    // req = (struct timespec32 *)(uint32_t)P2V((curproc->pgd & 0xfff00000) + (curproc->context.r[0] & 0x000fffff));
+
+    if (req->tv_sec < 0 || req->tv_nsec < 0 || req->tv_nsec >= 1000000000) {
+        curproc->context.r[0] = -22; // EINVAL
+        return;
+    }
+
+    if (req->tv_sec == 0 && req->tv_nsec == 0) return;
+
+    uint64_t usec = (uint64_t)req->tv_sec * 1000000 + (req->tv_nsec + 999) / 1000;
+
+    curproc->sleep_time = usec;
+    curproc->state = SLEEPING;
+}
+
+static void
+nanowakeup()
+{
+    struct proc *p;
+
+    for (p = procs; p < &procs[NPROC]; p++) {
+        if (p->state == SLEEPING && p->sleep_time) {
+            if (p->sleep_time <= ticks_interval) {
+                p->sleep_time = 0;
+                p->state = RUNNABLE;
+            } else {
+                p->sleep_time -= ticks_interval;
+            }
+        }
+    }
+}
+
 void
 trap_enter(struct context *tf, uint32_t cpsr)
 {
@@ -53,6 +103,7 @@ trap_enter(struct context *tf, uint32_t cpsr)
                 systimer_clear(TIMER1);
                 uint32_t _c = systimer_counter();
                 systimer_set(TIMER1, _c + ticks_interval);
+                nanowakeup();
                 if (ticks++ % 2 == 0)
                     gpio_output(16, 0);
                 else
@@ -86,6 +137,7 @@ proc_init(void) {
     initproc = p;
     p->parent = 0;
     p->pid = nextpid++;
+    p->sleep_time = 0;
 
     // init.S 36
     unsigned char initcode[] = {
@@ -150,6 +202,7 @@ proc_fork(void)
     p->state = RUNNABLE;
     p->pid = nextpid++;
     p->parent = curproc;
+    p->sleep_time = 0;
     p->context = curproc->context;
     strncpy(p->name, curproc->name, 16);
 

@@ -22,6 +22,7 @@ struct proc {
 	enum procstate state;       // Process state
 	int pid;                    // Process ID
 	struct proc *parent;
+	uint64_t sleep_time;
 	struct context context;
 	char name[16];              // Process name (debugging)
 	uint32_t pgd;		        // page descriptor
@@ -138,4 +139,7 @@ void proc_wait4(void);
 extern struct proc procs[];
 extern struct proc *curproc;
 extern struct context context_schd;
+
+#include "nanosleep.h"
+
 #endif

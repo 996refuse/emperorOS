@@ -42,6 +42,20 @@ int wait(int pid, int *ws){
     return r0;
 }
 
+int nanosleep(const struct timespec32 *req, struct timespec32 *rem) {
+    register int r7 asm("r7") = SYS_nanosleep_time32;
+    register int r0 asm("r0") = (uintptr_t)req;
+    register int r1 asm("r1") = (uintptr_t)rem;
+
+    asm volatile (
+        "svc #0"
+        : "+r" (r0)
+        : "r" (r7), "r" (r1)
+        : "memory"
+    );
+    return r0;
+}
+
 void _putchar(char character) {
     register int r7 asm("r7") = SYS_putchar;
     register int r0 asm("r0") = character;

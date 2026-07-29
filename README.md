@@ -48,6 +48,32 @@ cp kernel.img path/to/sdcard
 10. interrupt
 11. syscall
 
+## Linux compatible syscalls
+
+read
+write
+open
+close
+lseek
+fstat
+stat
+ioctl
+mmap
+munmap
+brk
+exit
+execve
+fork
+wait4
+getpid
+getppid
+dup
+dup2
+pipe
+chdir
+getcwd
+nanosleep
+
 ## donate
 
 ## license
